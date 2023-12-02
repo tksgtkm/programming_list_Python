@@ -1,0 +1,3 @@
+dataset/*.gz
+dataset/__pycache__
+dataset/*.pkl
