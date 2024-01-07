@@ -128,13 +128,13 @@ class BatchNormalization:
         out = self.__forward(x, train_flg)
         return out.reshape(*self.input_shape)
 
-    def __forward(self, x, train_fig):
+    def __forward(self, x, train_flg):
         if self.running_mean is None:
             N, D = x.shape
             self.running_mean = np.zeros(D)
             self.running_var = np.zeros(D)
 
-        if train_fig:
+        if train_flg:
             mu = x.mean(axis=0)
             xc = x - mu
             var = np.mean(xc**2, axis=0)
