@@ -1,3 +1,6 @@
 neural_network_intro/dataset/*.gz
 dataset/*.pkl
 neural_network_intro/**/__pycache__
+NLP/**/__pycache__
+NLP/**/*.npy
+NLP/**/*.txt
