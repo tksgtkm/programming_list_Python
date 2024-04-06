@@ -1,0 +1,14 @@
+version: '3'
+services:
+  poetrytest:
+    restart: always
+    build: .
+    container_name: 'pydev'
+    env_file:
+      - .env
+    working_dir: '/root/test'
+    ports:
+      - "8888:8888"
+    tty: true
+    volumes:
+      - ./test:/root/test
