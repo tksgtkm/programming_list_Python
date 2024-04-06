@@ -41,7 +41,7 @@ class Item:
     @property
     def composite(self):
         return bool(self.children)
-    
+
     def add(self, first, *items):
         self.children.extend(itertools.chain((first,), items))
 
@@ -72,4 +72,3 @@ def make_composite(name, *items):
 
 if __name__ == "__main__":
     main()
-        
