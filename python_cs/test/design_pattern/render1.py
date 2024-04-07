@@ -1,3 +1,5 @@
+# Adapter Pattern
+
 import abc
 import collections
 import sys
@@ -35,6 +37,8 @@ def main():
     paragraph1 = MESSAGE.format("HTML", "HtmlRenderer")
     title = "HTML"
     file = sys.stdout
+    # ここはブリッジパターンとも言える
+    # HtmlRendererクラスはhtmlWriterを用いて描画機能を提供している
     htmlPage = Page(title, HtmlRenderer(HtmlWriter(file)))
     htmlPage.add_paragraph(paragraph1)
     htmlPage.add_paragraph(paragraph2)
