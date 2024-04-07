@@ -17,6 +17,7 @@ langchain-openai = "^0.1.1"
 langchainhub = "^0.1.15"
 chromadb = "^0.4.24"
 langchain = "^0.1.13"
+pillow = "^10.3.0"
 
 
 [build-system]
