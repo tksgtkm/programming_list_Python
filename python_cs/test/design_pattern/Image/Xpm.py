@@ -134,8 +134,8 @@ def _palette_and_cpp(pixels):
 def _write_header(image, file, name, cpp, colors):
     file.write("{}\nstatic unsigned char *{}[] = {{\n".format(_XPM, name))
     file.write('"{} {} {} {}'.format(image.width, image.height, colors, cpp))
-    x = image.meta_get("x_hot")
-    y = image.meta_get("y_hot")
+    x = image.meta.get("x_hot")
+    y = image.meta.get("y_hot")
     if x is not None and y is not None:
         file.write(" {} {}".format(x, y))
     file.write('",\n')
