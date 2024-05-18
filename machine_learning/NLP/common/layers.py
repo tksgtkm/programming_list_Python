@@ -1,5 +1,10 @@
-import numpy as np
+from common.config import GPU
 
+if GPU:
+    import jax as np
+else:
+    import numpy as np
+    
 from common.functions import softmax, cross_entropy_error
 
 class MatMul:

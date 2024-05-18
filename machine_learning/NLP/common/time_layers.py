@@ -1,4 +1,9 @@
-import numpy as np
+from common.config import GPU
+
+if GPU:
+    import jax as np
+else:
+    import numpy as np
 
 from common.functions import softmax, sigmoid
 from common.layers import *
@@ -108,7 +113,7 @@ class LSTM:
         f = A[:, :H]
         g = A[:, H:2*H]
         i = A[:, 2*H:3*H]
-        o = A[:, 3*H]
+        o = A[:, 3*H:]
 
         f = sigmoid(f)
         g = np.tanh(g)

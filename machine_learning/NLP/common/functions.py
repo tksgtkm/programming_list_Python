@@ -1,4 +1,9 @@
-import numpy as np
+from common.config import GPU
+
+if GPU:
+    import jax as np
+else:
+    import numpy as np
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
