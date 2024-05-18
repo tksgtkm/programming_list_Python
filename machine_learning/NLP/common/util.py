@@ -4,7 +4,7 @@ import os
 from common.config import GPU
 
 if GPU:
-    import jax as np
+    import jax.numpy as np
 else:
     import numpy as np
 
@@ -147,8 +147,12 @@ def eval_perplexity(model, corpus, batch_size=10, time_size=35):
         offsets = [time_offset + (i * jump) for i in range(batch_size)]
         for t in range(time_size):
             for i, offset in enumerate(offsets):
-                xs[i, t] = corpus[(offset + t) % corpus_size]
-                ts[i, t] = corpus[(offset + t + 1) % corpus_size]
+                if GPU:
+                    xs = xs.at[i, t].set(corpus[(offset + t) % corpus_size])
+                    ts = ts.at[i, t].set(corpus[(offset + t + 1) % corpus_size])
+                else:
+                    xs[i, t] = corpus[(offset + t) % corpus_size]
+                    ts[i, t] = corpus[(offset + t + 1) % corpus_size]
 
         try:
             loss = model.forward(xs, ts, train_flg=False)

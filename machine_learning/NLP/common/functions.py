@@ -1,7 +1,7 @@
 from common.config import GPU
 
 if GPU:
-    import jax as np
+    import jax.numpy as np
 else:
     import numpy as np
 

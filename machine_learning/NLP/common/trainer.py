@@ -3,7 +3,9 @@ sys.path.append('..')
 from common.config import GPU
 
 if GPU:
-    import jax as np
+    import jax.numpy as np
+    from jax import random
+    key = random.PRNGKey(42)
 else:
     import numpy as np
 import time
@@ -31,7 +33,10 @@ class Trainer:
         start_time = time.time()
 
         for epoch in range(max_epoch):
-            idx = np.random.permutation(np.arange(data_size))
+            if GPU:
+                idx = random.permutation(key=key)
+            else:
+                idx = np.random.permutation(np.arange(data_size))
             x = x[idx]
             t = t[idx]
 
@@ -86,8 +91,12 @@ class RnnlmTrainer:
 
         for time in range(time_size):
             for i, offset in enumerate(offsets):
-                batch_x[i, time] = x[(offset + self.time_idx) % data_size]
-                batch_t[i, time] = t[(offset + self.time_idx) % data_size]
+                if GPU:
+                    batch_x = batch_x.at[i, time].set(x[(offset + self.time_idx) % data_size])
+                    batch_t = batch_t.at[i, time].set(t[(offset + self.time_idx) % data_size])
+                else:
+                    batch_x[i, time] = x[(offset + self.time_idx) % data_size]
+                    batch_t[i, time] = t[(offset + self.time_idx) % data_size]
             self.time_idx += 1
         return batch_x, batch_t
 

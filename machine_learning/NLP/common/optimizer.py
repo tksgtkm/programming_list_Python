@@ -1,7 +1,12 @@
 import sys
 sys.path.append('..')
 
-import numpy as np
+from common.config import GPU
+
+if GPU:
+    import jax.numpy as np
+else:
+    import numpy as np
 
 class SGD:
 
@@ -11,6 +16,7 @@ class SGD:
     def update(self, params, grads):
         for i in range(len(params)):
             params[i] -= self.lr * grads[i]
+            
 
 class Adam:
 

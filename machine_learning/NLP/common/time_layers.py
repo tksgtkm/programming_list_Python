@@ -1,7 +1,9 @@
 from common.config import GPU
 
 if GPU:
-    import jax as np
+    import jax.numpy as np
+    from jax import random
+    key = random.PRNGKey(42)
 else:
     import numpy as np
 
@@ -34,9 +36,14 @@ class RNN:
         dWx = np.dot(x.T, dt)
         dx = np.dot(dt, Wx.T)
 
-        self.grads[0][...] = dWx
-        self.grads[1][...] = dWh
-        self.grads[2][...] = db
+        if GPU:
+            self.grads[0] = self.grads[0].at[...].set(dWx)
+            self.grads[1] = self.grads[1].at[...].set(dWh)
+            self.grads[2] = self.grads[2].at[...].set(db)
+        else:
+            self.grads[0][...] = dWx
+            self.grads[1][...] = dWh
+            self.grads[2][...] = db
 
         return dx, dh_prev
 
@@ -69,7 +76,10 @@ class TimeRNN:
         for t in range(T):
             layer = RNN(*self.params)
             self.h = layer.forward(xs[:, t, :], self.h)
-            hs[:, t, :] = self.h
+            if GPU:
+                hs = hs.at[:, t, :].set(self.h)
+            else:
+                hs[:, t, :] = self.h
             self.layers.append(layer)
 
         return hs
@@ -85,13 +95,22 @@ class TimeRNN:
         for t in reversed(range(T)):
             layer = self.layers[t]
             dx, dh = layer.backward(dhs[:, t, :] + dh)
-            dxs[:, t, :] = dx
+            if GPU:
+                dxs = dxs.at[:, t, :].set(dx)
+            else:
+                dxs[:, t, :] = dx
 
             for i, grad in enumerate(layer.grads):
-                grads[i] += grad
+                if GPU:
+                    grads = grads.at[i].add(grad)
+                else:
+                    grads[i] += grad
 
         for i, grad in enumerate(grads):
-            self.grads[i][...] = grad
+            if GPU:
+                self.grads[i] = self.grads[i].at[...].set(grad)
+            else:
+                self.grads[i][...] = grad
 
         self.dh = dh
 
@@ -152,9 +171,14 @@ class LSTM:
         dWx = np.dot(x.T, dA)
         db = dA.sum(axis=0)
 
-        self.grads[0][...] = dWx
-        self.grads[1][...] = dWh
-        self.grads[2][...] = db
+        if GPU:
+            self.grads[0] = self.grads[0].at[...].set(dWx)
+            self.grads[1] = self.grads[1].at[...].set(dWh)
+            self.grads[2] = self.grads[2].at[...].set(db)
+        else:
+            self.grads[0][...] = dWx
+            self.grads[1][...] = dWh
+            self.grads[2][...] = db
 
         dx = np.dot(dA, Wx.T)
         dh_prev = np.dot(dA, Wh.T)
@@ -188,7 +212,10 @@ class TimeLSTM:
         for t in range(T):
             layer = LSTM(*self.params)
             self.h, self.c = layer.forward(xs[:, t, :], self.h, self.c)
-            hs[:, t, :] = self.h
+            if GPU:
+                hs = hs.at[:, t, :].set(self.h)
+            else:
+                hs[:, t, :] = self.h
 
             self.layers.append(layer)
 
@@ -206,12 +233,20 @@ class TimeLSTM:
         for t in reversed(range(T)):
             layer = self.layers[t]
             dx, dh, dc = layer.backward(dhs[:, t, :] + dh, dc)
-            dxs[:, t, :] = dx
+
+            if GPU:
+                dxs = dxs.at[:, t, :].set(dx)
+            else:
+                dxs[:, t, :] = dx
             for i, grad in enumerate(layer.grads):
                 grads[i] += grad
+                    
 
         for i, grad in enumerate(grads):
-            self.grads[i][...] = grad
+            if GPU:
+                self.grads[i] = self.grads[i].at[...].set(grad)
+            else:
+                self.grads[i][...] = grad
         self.dh = dh
         return dxs
     
@@ -238,7 +273,10 @@ class TimeEmbedding:
 
         for t in range(T):
             layer = Embedding(self.W)
-            out[:, t, :] = layer.forward(xs[:, t])
+            if GPU:
+                out = out.at[:, t, :].set(layer.forward(xs[:, t]))
+            else:
+                out[:, t, :] = layer.forward(xs[:, t])
             self.layers.append(layer)
 
         return out
@@ -252,7 +290,10 @@ class TimeEmbedding:
             layer.backward(dout[:, t, :])
             grad += layer.grads[0]
 
-        self.grads[0][...] = grad
+        if GPU:
+            self.grads[0] = self.grads[0].at[...].set(grad)
+        else:
+            self.grads[0][...] = grad
         return None
     
 class TimeAffine:
@@ -284,8 +325,12 @@ class TimeAffine:
         dx = np.dot(dout, W.T)
         dx = dx.reshape(*x.shape)
 
-        self.grads[0][...] = dW
-        self.grads[1][...] = db
+        if GPU:
+            self.grads[0] = self.grads[0].at[...].set(dW)
+            self.grads[1] = self.grads[1].at[...].set(db)
+        else:
+            self.grads[0][...] = dW
+            self.grads[1][...] = db
 
         return dx
     
@@ -321,7 +366,10 @@ class TimeSoftmaxWithLoss:
         ts, ys, mask, (N, T, V) = self.cache
 
         dx = ys
-        dx[np.arange(N * T), ts] -= 1
+        if GPU:
+            dx = dx.at[np.arange(N * T), ts].add(-1)
+        else:
+            dx[np.arange(N * T), ts] -= 1
         dx *= dout
         dx /= mask.sum()
         dx *= mask[:, np.newaxis]
@@ -362,7 +410,10 @@ class TimeSoftmaxWithLoss:
         ts, ys, mask, (N, T, V) = self.cache
 
         dx = ys
-        dx[np.arange(N * T), ts] -= 1
+        if GPU:
+            dx = dx.at[np.arange(N * T), ts].add(-1)
+        else:
+            dx[np.arange(N * T), ts] -= 1
         dx *= dout
         dx /= mask.sum()
         dx *= mask[:, np.newaxis]
@@ -381,7 +432,10 @@ class TimeDropout:
 
     def forward(self, xs):
         if self.train_flg:
-            flg = np.random.rand(*xs.shape) > self.dropout_ratio
+            if GPU:
+                flg = random.normal(key=key, shape=xs.shape) > self.dropout_ratio
+            else:
+                flg = np.random.rand(*xs.shape) > self.dropout_ratio
             scale = 1 / (1.0 - self.dropout_ratio)
             self.mask = flg.astype(np.float32) * scale
 
@@ -389,5 +443,5 @@ class TimeDropout:
         else:
             return xs
         
-    def backword(self, dout):
+    def backward(self, dout):
         return dout * self.mask
