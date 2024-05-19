@@ -1,5 +1,12 @@
-import numpy as np
+from common.config import GPU
 
+if GPU:
+    import jax.numpy as np
+    from jax import random
+    key = random.PRNGKey(42)
+else:
+    import numpy as np
+    
 from common.functions import softmax, cross_entropy_error
 
 class MatMul:
@@ -19,7 +26,10 @@ class MatMul:
         W, = self.params
         dx = np.dot(dout, W.T)
         dW = np.dot(self.x.T, dout)
-        self.grads[0][...] = dW
+        if GPU:
+            self.grads[0] = self.grads[0].at[...].set(dW)
+        else:
+            self.grads[0][...] = dW
         return dx
     
 class SoftmaxWithLoss:
@@ -44,7 +54,10 @@ class SoftmaxWithLoss:
         batch_size = self.t.shape[0]
 
         dx = self.y.copy()
-        dx[np.arange(batch_size), self.t] -= 1
+        if GPU:
+            dx = dx.at[np.arange(batch_size), self.t].add(-1)
+        else:
+            dx[np.arange(batch_size), self.t] -= 1
         dx *= dout
         dx = dx / batch_size
 
@@ -85,6 +98,13 @@ class Embedding:
     
     def backward(self, dout):
         dW, = self.grads
-        dW[...] = 0
-        np.add.at(dW, self.idx, dout)
+        if GPU:
+            dW = dW.at[...].set(0)
+        else:
+            dW[...] = 0
+            
+        if GPU:
+            dW.at[self.idx].add(dout)
+        else:
+            np.add.at(dW, self.idx, dout)
         return None
