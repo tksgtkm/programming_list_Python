@@ -15,6 +15,32 @@ class BaseCollection(object):
     def __repr__(self):
         return self.__class__.__name__ + "([" + ",".join([repr(x) for x in self]) + "])"
     
+class BaseSet(BaseCollection):
+
+    def __init__(self):
+        super(BaseSet, self).__init__()
+
+    def add_all(self, a):
+        for x in a:
+            self.add(x)
+
+    def __in__(self, x):
+        return self.find(x) is not None
+    
+    def __eq__(self, a):
+        if len(a) != len(self):
+            return False
+        for x in self:
+            if not x in a:
+                return False
+        for x in a:
+            if not x in self:
+                return False
+        return True
+    
+    def __ne__(self, a):
+        return not self == a
+
 class BaseList(BaseCollection):
 
     def __init__(self):

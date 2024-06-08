@@ -1,10 +1,11 @@
 from utils import new_array
 from base import BaseList
 
-class ArrayStack(BaseList):
+class FastArrayStack(BaseList):
 
     def __init__(self, iterable=[]):
         self._initialize()
+        self.add_all(iterable)
 
     def _initialize(self):
         self.a = new_array(1)
@@ -27,7 +28,8 @@ class ArrayStack(BaseList):
             raise IndexError()
         if self.n == len(self.a):
             self._resize()
-        self.a[i+1:self.n + 1] = self.a[i:self.n]
+
+        self.a[i + 1: self.n + 1] = self.a[i:self.n]
         self.a[i] = x
         self.n += 1
 
@@ -40,7 +42,7 @@ class ArrayStack(BaseList):
         if len(self.a) >= 3*self.n:
             self._resize()
         return x
-
+    
     def _resize(self):
         b = new_array(max(1, 2*self.n))
         b[0:self.n] = self.a[0:self.n]
