@@ -30,7 +30,13 @@ class DualArrayDeque(BaseList):
             self.back.add(i-self.front.size(), x)
         self._balance()
 
-        
+    def remove(self, i):
+        if i < self.front.size():
+            x = self.front.remove(self.front.size() - i - 1)
+        else:
+            x = self.back.remove(i - self.front.size())
+        self._balance()
+        return x
 
     def _balance(self):
         n = self.size()
@@ -44,3 +50,10 @@ class DualArrayDeque(BaseList):
                 b.add(i, self.get(mid+i))
             self.front = f
             self.back = b
+
+    def clear(self):
+        self.front.clear()
+        self.back.clear()
+
+    def size(self):
+        return self.front.size() + self.back.size()
