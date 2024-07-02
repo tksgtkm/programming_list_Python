@@ -1,3 +1,7 @@
+"""
+Abstract Factory
+"""
+
 import os
 import sys
 import tempfile
