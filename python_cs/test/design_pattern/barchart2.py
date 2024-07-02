@@ -1,13 +1,9 @@
-"""
-Bridgeパターン
-"""
-
 import abc
 import os
 import re
 import tempfile
+import tkinter as tk
 import Qtrack
-import Image
 
 def main():
     pairs = (("Mon", 16), ("Tue", 17), ("Wed", 19), ("Thu", 22),
@@ -55,7 +51,7 @@ class TextBarRenderer:
 
 class ImageBarRenderer:
 
-    COLORS = [Image.color_for_name(name) for name in ("red", "green", "blue", "yellow", "magenta", "cyan")]
+    COLORS = ("red", "green", "blue", "yellow", "magenta", "cyan")
 
     def __init__(self, stepHeight=10, barWidth=30, barGap=2):
         self.stepHeight = stepHeight
@@ -64,26 +60,35 @@ class ImageBarRenderer:
 
     def initialize(self, bars, maximum):
         assert bars > 0 and maximum > 0
+        if tk._default_root is None:
+            self.gui = tk.Tk()
+            self.inGui = False
+        else:
+            self.gui = tk._default_root
+            self.inGui = True
         self.index = 0
-        color = Image.color_for_name("white")
-        self.image = Image.Image(bars * (self.barWidth + self.barGap), maximum * self.stepHeight, background=color)
+        self.width = bars * (self.barWidth + self.barGap)
+        self.height = maximum * self.stepHeight
+        self.image = tk.PhotoImage(width=self.width, height=self.height)
+        self.image.put("white", (0, 0, self.width, self.height))
 
     def draw_caption(self, caption):
-        self.filename = os.path.join(tempfile.gettempdir(), re.sub(r"\W+", "_", caption) + ".xpm")
+        self.filename = os.path.join(tempfile.gettempdir(), re.sub(r"\W+", "_", caption) + ".gif")
 
     def draw_bar(self, name, value):
         color = ImageBarRenderer.COLORS[self.index % len(ImageBarRenderer.COLORS)]
-        width, height = self.image.size
         x0 = self.index * (self.barWidth + self.barGap)
         x1 = x0 + self.barWidth
-        y0 = height - (value * self.stepHeight)
-        y1 = height - 1
-        self.image.rectangle(x0, y0, x1, y1, fill=color)
+        y0 = self.height - (value * self.stepHeight)
+        y1 = self.height - 1
+        self.image.put(color, (x0, y0, x1, y1))
         self.index += 1
 
     def finalize(self):
-        self.image.save(self.filename)
+        self.image.write(self.filename, "gif")
         print("wrote", self.filename)
+        if not self.inGui:
+            self.gui.quit()
 
 if __name__ == "__main__":
     main()
