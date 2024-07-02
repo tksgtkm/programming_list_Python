@@ -1,3 +1,7 @@
+"""
+Factory Methodパターン
+"""
+
 import io
 import itertools
 import os

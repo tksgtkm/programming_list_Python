@@ -7,23 +7,14 @@ import collections
 import sys
 import textwrap
 from html import escape
+import Qtrack
 
-class Renderer(metaclass=abc.ABCMeta):
-
-    @classmethod
-    def __subclasshook__(Class, Subclass):
-        if Class is Renderer:
-            attributes = collections.ChainMap(*(Superclass.__dict__ for Superclass in Subclass.__mro__))
-            methods = ("header", "paragraph", "footer")
-            if all(method in attributes for method in methods):
-                return True
-        return NotImplemented
-    
+@Qtrack.has_methods("header", "paragraph", "footer")
+class Renderer(metaclass=abc.ABCMeta): pass
 
 MESSAGE = """This is a very short {} paragraph that demonstrates
 the simple {} class.
 """
-
 def main():
     paragraph1 = MESSAGE.format("plain-text", "TextRenderer")
     paragraph2 = """This is another short paragraph just so that we can
