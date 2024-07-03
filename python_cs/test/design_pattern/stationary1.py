@@ -15,7 +15,7 @@ def main():
 # すべてのアイテムに抽象クラスを持たせる
 class AbstractItem(metaclass=abc.ABCMeta):
 
-    @abc.abstractproperty
+    @property
     def composite(self):
         pass
 
