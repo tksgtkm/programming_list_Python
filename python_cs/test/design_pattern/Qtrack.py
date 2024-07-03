@@ -33,3 +33,18 @@ def has_methods(*methods):
         Base.__subclasshook__ = classmethod(__subclasshook__)
         return Base
     return decorator
+
+class Requirer(metaclass=abc.ABCMeta):
+
+    @classmethod
+    def __subclasshook__(Class, Subclass):
+        methods = set()
+        for Superclass in Subclass.__mro__:
+            if hasattr(Superclass, "required_methods"):
+                methods |= set(Superclass.required_methods)
+        attributes = collections.ChainMap(
+            *(Superclass.__dict__ for Superclass in Class.__mro__)
+        )
+        if all(method in attributes for method in methods):
+            return True
+        return NotImplemented
