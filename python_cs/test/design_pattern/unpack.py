@@ -59,7 +59,7 @@ class Archive:
             if unsafe:
                 raise ValueError("unsafe to unpack: {}".format(unsafe))
             self._file.extractall()
-        if self.filename.endsswith(".zip"):
+        if self.filename.endswith(".zip"):
             self._file = zipfile.ZipFile(self.filename)
             self._names = self._file.namelist
             self._unpack = safe_extractall
