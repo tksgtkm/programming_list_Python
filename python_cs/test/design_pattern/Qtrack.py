@@ -5,6 +5,21 @@ import functools
 import os
 import sys
 
+def coroutine(function):
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        generator = function(*args, **kwargs)
+        next(generator)
+        return generator
+    return wrapper
+
+def remove_if_exists(filename):
+    try:
+        os.remove(filename)
+    except OSError as err:
+        if err.errno != errno.ENOENT:
+            raise
+
 # def has_methods(*methods):
 #     def decorator(Base):
 #         def __subclasshook__(Class, Subclass):
