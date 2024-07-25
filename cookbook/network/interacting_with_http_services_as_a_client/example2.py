@@ -1,0 +1,21 @@
+import requests
+
+from pprint import pprint
+
+url = 'http://httpbin.org/post'
+
+parms = {
+    'name1': 'value1',
+    'name2': 'value2'
+}
+
+headers = {
+    'User-agent': 'none/ofyourbusiness',
+    'Spam': 'Eggs'
+}
+
+resp = requests.post(url, data=parms, headers=headers)
+
+text = resp.text
+
+pprint(resp.json)
