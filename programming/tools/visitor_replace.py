@@ -1,3 +1,21 @@
+"""
+$ python3 tools/visitor_replace.py system/filetools2 system system2
+List only?y
+Visited 18 files
+Found 2 files:
+system/filetools2/split.py
+system/filetools2/join.py
+
+$ python3 tools/visitor_replace.py system/filetools2 system system2
+List only?n
+Proceed with change?y
+Visited 18 files
+Changed 2 files:
+system/filetools2/split.py
+system/filetools2/join.py
+
+
+"""
 import sys
 from visitor import SearchVisitor
 
