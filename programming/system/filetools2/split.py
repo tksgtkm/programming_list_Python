@@ -3,8 +3,8 @@
 $ python3 split.py 
 File to be split?/usr/bin/python3.8
 Directory to store part files?splitout
-Splitting /usr/bin/python3.8 to /home/onimas/develop/github/programming_list_Python/programming/system/filetools/splitout by 1433600
-Split finished: 4 parts are in /home/onimas/develop/github/programming_list_Python/programming/system/filetools/splitout
+Splitting /usr/bin/python3.8 to /home/onimas/develop/github/programming_list_Python/programming/system2/filetools/splitout by 1433600
+Split finished: 4 parts are in /home/onimas/develop/github/programming_list_Python/programming/system2/filetools/splitout
 Press Enter key
 
 """
