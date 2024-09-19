@@ -2,8 +2,8 @@
 $ python3 join.py 
 Directory containing part files?splitout
 Name of file to be recreated?newpy3.8
-Joining /home/onimas/develop/github/programming_list_Python/programming/system/filetools/splitout to make /home/onimas/develop/github/programming_list_Python/programming/system/filetools/newpy3.8
-Join complete: see /home/onimas/develop/github/programming_list_Python/programming/system/filetools/newpy3.8
+Joining /home/onimas/develop/github/programming_list_Python/programming/system2/filetools/splitout to make /home/onimas/develop/github/programming_list_Python/programming/system2/filetools/newpy3.8
+Join complete: see /home/onimas/develop/github/programming_list_Python/programming/system2/filetools/newpy3.8
 Press Enter key
 """
 
