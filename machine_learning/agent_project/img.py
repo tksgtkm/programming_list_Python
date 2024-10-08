@@ -8,6 +8,10 @@ import numpy as np
 from PIL import Image
 from matplotlib import lines
 
+import ipywidgets as widgets
+
+from IPython.display import display
+
 def show_map(graph_data, node_colors=None):
     G = nx.Graph(graph_data['graph_dict'])
     node_colors = node_colors or graph_data['node_colors']
@@ -34,3 +38,108 @@ def show_map(graph_data, node_colors=None):
                numpoints=1, prop={'size': 16}, loc=(.8, .75))
     
     plt.show()
+
+def final_path_colors(initial_node_colors, problem, solution):
+    final_colors = dict(initial_node_colors)
+    final_colors[problem.initial] = "green"
+    for node in solution:
+        final_colors[node] = "green"
+    return final_colors
+
+def display_visual(graph_data, user_input, algorithm=None, problem=None):
+    initial_node_colors = graph_data['node_colors']
+    if user_input is False:
+        def slider_callback(iteration):
+            try:
+                show_map(graph_data, node_colors=all_node_colors[iteration])
+            except:
+                pass
+
+        def visualize_callback(visualize):
+            if visualize is True:
+                button.value = False
+
+                global all_node_colors
+
+                iterations, all_node_colors, node = algorithm(problem)
+                solution = node.solution()
+                all_node_colors.append(final_path_colors(all_node_colors[0], problem, solution))
+
+                slider.max = len(all_node_colors) - 1
+
+                for i in range(slider.max + 1):
+                    slider.value = i
+
+        slider = widgets.IntSlider(min=0, max=1, step=1, value=0)
+        slider_visual = widgets.interactive(slider_callback, iteration=slider)
+        display(slider_visual)
+
+        button = widgets.ToggleButton(value=False)
+        button_visual = widgets.interactive(visualize_callback, visualize=button)
+        display(button_visual)
+
+    if user_input is True:
+        node_colors = dict(initial_node_colors)
+        if isinstance(algorithm, dict):
+            assert set(algorithm.keys()).issubset(
+                {
+                    "Breadth First Tree Search",
+                    "Depth First Tree Search",
+                    "Breadth First Search",
+                    "Depth First Graph Search",
+                    "Best First Graph Search",
+                    "Uniform Cost Search",
+                    "Depth Limited Search",
+                    "Iterative Deepening Search",
+                    "Greedy Best First Search",
+                    "A-star Search",
+                    "Recursive Best First Search"
+                }
+            )
+            algo_dropdown = widgets.Dropdown(
+                description="Search Algorithm",
+                options=sorted(list(algorithm.keys())),
+                value="Breadth First Tree Search"
+            )
+
+            display(algo_dropdown)
+        elif algorithm is None:
+            print("No Algorithm to run")
+            return 0
+        
+        def slider_callback(iteration):
+            try:
+                show_map(graph_data, node_colors=all_node_colors[iteration])
+            except:
+                pass
+
+        def visualize_callback(visualize):
+            if visualize is True:
+                button.value = False
+
+                global all_node_colors
+
+                iterations, all_node_colors, node = algorithm(problem)
+                solution = node.solution()
+                all_node_colors.append(final_path_colors(all_node_colors[0], problem, solution))
+
+                slider.max = len(all_node_colors) - 1
+
+                for i in range(slider.max + 1):
+                    slider.value = i
+
+        start_dropdown = widgets.Dropdown(description="Start city: ",
+                                          options=sorted(list(node_colors.keys())), value="Arad")
+        display(start_dropdown)
+
+        end_dropdown = widgets.Dropdown(description="Goal city: ",
+                                        options=sorted(list(node_colors.keys())), value="Fagaras")
+        display(end_dropdown)
+
+        button = widgets.ToggleButton(value=False)
+        button_visual = widgets.interactive(visualize_callback, visualize=button)
+        display(button_visual)
+
+        slider = widgets.IntSlider(min=0, max=1, step=1, value=0)
+        slider_visual = widgets.interactive(slider_callback, iteration=slider)
+        display(slider_visual)
