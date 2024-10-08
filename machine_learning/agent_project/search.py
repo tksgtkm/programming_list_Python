@@ -1,7 +1,9 @@
 import sys
 from collections import deque
 
-from utils import is_in, memoize, PriorityQueue
+from utils import distance, is_in, memoize, PriorityQueue
+
+import numpy as np
 
 class Problem:
 
@@ -132,8 +134,26 @@ class Graph:
             for (b, dist) in self.graph_dict[a].items():
                 self.connect1(b, a, dist)
 
+    def connect(self, A, B, distance=1):
+        self.connect1(A, B, distance)
+        if not self.directed:
+            self.connect1(B, A, distance)
+
     def connect1(self, A, B, distance):
         self.graph_dict.setdefault(A, {})[B] = distance
+
+    def get(self, a, b=None):
+        links = self.graph_dict.setdefault(a, {})
+        if b is None:
+            return links
+        else:
+            return links.get(b)
+        
+    def nodes(self):
+        s1 = set([k for k in self.graph_dict.keys()])
+        s2 = set([k2 for v in self.graph_dict.values() for k2, v2 in v.items()])
+        nodes = s1.union(s2)
+        return list(nodes)
 
 def UndirectedGraph(graph_dict=None):
     return Graph(graph_dict=graph_dict, directed=False)
@@ -147,6 +167,29 @@ class GraphProblem(Problem):
     def actions(self, A):
         return list(self.graph.get(A).keys())
     
+    def result(self, state, action):
+        return action
+    
+    def path_cost(self, cost_so_far, A, action, B):
+        return cost_so_far + (self.graph.get(A, B) or np.inf)
+    
+    def find_min_edge(self):
+        m = np.inf
+        for d in self.graph.graph_dict.values():
+            local_min = min(d.values())
+            m = min(m, local_min)
+
+        return m
+    
+    def h(self, node):
+        locs = getattr(self.graph, 'locations', None)
+        if locs:
+            if type(node) is str:
+                return int(distance(locs[node], locs[self.goal]))
+            
+            return int(distance(locs[node.state], locs[self.goal]))
+        else:
+            return np.inf
 # ______________________________________________________________________________
 # 探索アルゴリズム
 

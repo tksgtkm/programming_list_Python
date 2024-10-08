@@ -1,6 +1,11 @@
 import functools
 import heapq
 
+def distance(a, b):
+    xA, yA = a
+    xB, yB = b
+    return (xA - xB) ** 2 + (yA - yB) ** 2
+
 def is_in(elt, seq):
     return any(x is elt for x in seq)
 
