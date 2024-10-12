@@ -120,76 +120,7 @@ class SimpleProblemSolvingAgentProblem:
     
     def search(self, problem):
         raise NotImplementedError
-
-class Graph:
-
-    def __init__(self, graph_dict=None, directed=True):
-        self.graph_dict = graph_dict or {}
-        self.directed = directed
-        if not directed:
-            self.make_undirected()
         
-    def make_undirected(self):
-        for a in list(self.graph_dict.keys()):
-            for (b, dist) in self.graph_dict[a].items():
-                self.connect1(b, a, dist)
-
-    def connect(self, A, B, distance=1):
-        self.connect1(A, B, distance)
-        if not self.directed:
-            self.connect1(B, A, distance)
-
-    def connect1(self, A, B, distance):
-        self.graph_dict.setdefault(A, {})[B] = distance
-
-    def get(self, a, b=None):
-        links = self.graph_dict.setdefault(a, {})
-        if b is None:
-            return links
-        else:
-            return links.get(b)
-        
-    def nodes(self):
-        s1 = set([k for k in self.graph_dict.keys()])
-        s2 = set([k2 for v in self.graph_dict.values() for k2, v2 in v.items()])
-        nodes = s1.union(s2)
-        return list(nodes)
-
-def UndirectedGraph(graph_dict=None):
-    return Graph(graph_dict=graph_dict, directed=False)
-
-class GraphProblem(Problem):
-
-    def __init__(self, initial, goal, graph):
-        super().__init__(initial, goal)
-        self.graph = graph
-
-    def actions(self, A):
-        return list(self.graph.get(A).keys())
-    
-    def result(self, state, action):
-        return action
-    
-    def path_cost(self, cost_so_far, A, action, B):
-        return cost_so_far + (self.graph.get(A, B) or np.inf)
-    
-    def find_min_edge(self):
-        m = np.inf
-        for d in self.graph.graph_dict.values():
-            local_min = min(d.values())
-            m = min(m, local_min)
-
-        return m
-    
-    def h(self, node):
-        locs = getattr(self.graph, 'locations', None)
-        if locs:
-            if type(node) is str:
-                return int(distance(locs[node], locs[self.goal]))
-            
-            return int(distance(locs[node.state], locs[self.goal]))
-        else:
-            return np.inf
 # ______________________________________________________________________________
 # 探索アルゴリズム
 
@@ -291,3 +222,186 @@ def iterative_deepening_search(problem):
         result = depth_limited_search(problem, depth)
         if result != 'cutoff':
             return result
+        
+# ______________________________________________________________________________
+# Bidirectional Search
+# Pseudocode from https://webdocs.cs.ualberta.ca/%7Eholte/Publications/MM-AAAI2016.pdf
+
+def bidirectional_search(problem):
+    e = 0
+    if isinstance(problem, GraphProblem):
+        e = problem.find_min_edge()
+    gF, gB = {Node(problem.initial): 0}, {Node(problem.goal): 0}
+    openF, openB = [Node(problem.initial)], [Node(problem.goal)]
+    closedF, closedB = [], []
+    U = np.inf
+
+    def extend(U, open_dir, open_other, g_dir, g_other, closed_dir):
+        return 
+    
+# ______________________________________________________________________________
+# Informed(ヒューリスティック)探索
+
+greedy_best_first_graph_search = best_first_graph_search
+
+def astar_search(problem, h=None, display=False):
+    h = memoize(h or problem.h, 'h')
+    return best_first_graph_search(problem, lambda n: n.path_cost + h(n), display)
+
+    
+# ______________________________________________________________________________
+# A* ヒューリスティック
+
+class EightPuzzle(Problem):
+
+    def __init__(self, initial, goal=(1, 2, 3, 4, 5, 6, 7, 8, 0)):
+        super().__init__(initial, goal)
+
+    def find_blank_suquare(self, state):
+        return state.index(0)
+    
+    def actions(self, state):
+        possible_actions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
+        index_blank_square = self.find_blank_suquare(state)
+
+        if index_blank_square % 3 == 0:
+            possible_actions.remove('LEFT')
+        if index_blank_square < 3:
+            possible_actions.remove('UP')
+        if index_blank_square % 3 == 2:
+            possible_actions.remove('RIGHT')
+        if index_blank_square > 5:
+            possible_actions.remove('DOWN')
+        
+        return possible_actions
+    
+    def result(self, state, action):
+        blank = self.find_blank_suquare(state)
+        new_state = list(state)
+
+        delta = {'UP': -3, 'DOWN': 3, 'LEFT': -1, 'RIGHT': 1}
+        neighbor = blank + delta[action]
+        new_state[blank], new_state[neighbor] = new_state[neighbor], new_state[blank]
+
+        return tuple(new_state)
+    
+    def goal_test(self, state):
+        return state == self.goal
+    
+    def check_solvability(self, state):
+        inversion = 0
+        for i in range(len(state)):
+            for j in range(i + 1, len(state)):
+                if (state[i] > state[j] and state[i] != 0 and state[j] != 0):
+                    inversion += 1
+
+        return inversion % 2 == 0
+    
+    def h(self, node):
+        return sum(s != g for (s, g) in zip(node.state, self.goal))
+
+# ______________________________________________________________________________
+# その他探索アルゴリズム
+
+def recursive_best_first_search(problem, h=None):
+    h = memoize(h or problem.h, 'h')
+
+    def RBFS(problem, node, flimit):
+        if problem.goal_test(node.state):
+            return node, 0
+        successors = node.expand(problem)
+        if len(successors) == 0:
+            return None, np.inf
+        for s in successors:
+            s.f = max(s.path_cost + h(s), node.f)
+        while True:
+            successors.sort(key=lambda x: x.f)
+            best = successors[0]
+            if best.f > flimit:
+                return None, best.f
+            if len(successors) > 1:
+                alternative = successors[1].f
+            else:
+                alternative = np.inf
+            result, best.f = RBFS(problem, best, min(flimit, alternative))
+            if result is not None:
+                return result, best.f
+
+    node = Node(problem.initial)
+    node.f = h(node)
+    result, bestf = RBFS(problem, node, np.inf)
+    return result
+
+
+# ______________________________________________________________________________
+# グラフ　グラフ問題
+
+class Graph:
+
+    def __init__(self, graph_dict=None, directed=True):
+        self.graph_dict = graph_dict or {}
+        self.directed = directed
+        if not directed:
+            self.make_undirected()
+        
+    def make_undirected(self):
+        for a in list(self.graph_dict.keys()):
+            for (b, dist) in self.graph_dict[a].items():
+                self.connect1(b, a, dist)
+
+    def connect(self, A, B, distance=1):
+        self.connect1(A, B, distance)
+        if not self.directed:
+            self.connect1(B, A, distance)
+
+    def connect1(self, A, B, distance):
+        self.graph_dict.setdefault(A, {})[B] = distance
+
+    def get(self, a, b=None):
+        links = self.graph_dict.setdefault(a, {})
+        if b is None:
+            return links
+        else:
+            return links.get(b)
+        
+    def nodes(self):
+        s1 = set([k for k in self.graph_dict.keys()])
+        s2 = set([k2 for v in self.graph_dict.values() for k2, v2 in v.items()])
+        nodes = s1.union(s2)
+        return list(nodes)
+
+def UndirectedGraph(graph_dict=None):
+    return Graph(graph_dict=graph_dict, directed=False)
+
+class GraphProblem(Problem):
+
+    def __init__(self, initial, goal, graph):
+        super().__init__(initial, goal)
+        self.graph = graph
+
+    def actions(self, A):
+        return list(self.graph.get(A).keys())
+    
+    def result(self, state, action):
+        return action
+    
+    def path_cost(self, cost_so_far, A, action, B):
+        return cost_so_far + (self.graph.get(A, B) or np.inf)
+    
+    def find_min_edge(self):
+        m = np.inf
+        for d in self.graph.graph_dict.values():
+            local_min = min(d.values())
+            m = min(m, local_min)
+
+        return m
+    
+    def h(self, node):
+        locs = getattr(self.graph, 'locations', None)
+        if locs:
+            if type(node) is str:
+                return int(distance(locs[node], locs[self.goal]))
+            
+            return int(distance(locs[node.state], locs[self.goal]))
+        else:
+            return np.inf
