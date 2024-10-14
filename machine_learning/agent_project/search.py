@@ -1,7 +1,9 @@
 import sys
+import random
 from collections import deque
 
-from utils import distance, is_in, memoize, PriorityQueue
+from utils import distance, is_in, memoize, PriorityQueue, argmax_random_tie
+from utils import probability, vector_add, gaussian_kernel
 
 import numpy as np
 
@@ -332,6 +334,67 @@ def recursive_best_first_search(problem, h=None):
     result, bestf = RBFS(problem, node, np.inf)
     return result
 
+def hill_climbing(problem):
+    current = Node(problem.initial)
+    while True:
+        neighbors = current.expand(problem)
+        if not neighbors:
+            break
+        neighbors = argmax_random_tie(neighbors, key=lambda node: problem.value(node.state))
+        if problem.value(neighbors.state) <= problem.value(current.state):
+            break
+        current = neighbors
+    return current.state
+
+def exp_schedule(k=20, lam=0.005, limit=100):
+    return lambda t: (k * np.exp(-lam * t) if t < limit else 0)
+
+def simulated_annealing(problem, schedule=exp_schedule()):
+    current = Node(problem.initial)
+    for t in range(sys.maxsize):
+        T = schedule(t)
+        if T == 0:
+            return current.state
+        neighbors = current.expand(problem)
+        if not neighbors:
+            return current.state
+        next_choice = random.choice(neighbors)
+        delta_e = problem.value(next_choice) - problem.value(current.state)
+        if delta_e > 0 or probability(np.exp(delta_e / T)):
+            current = next_choice
+
+directions4 = {'W': (-1, 0), 'N': (0, 1), 'E': (1, 0), 'S': (0, -1)}
+directions8 = dict(directions4)
+directions8.update({'NW': (-1, 1), 'NE': (1, 1), 'SE': (1, -1), 'SW': (-1, -1)})
+
+class PeakFindingProblem(Problem):
+
+    def __init__(self, initial, grid, defined_actions=directions4):
+        super().__init__(initial)
+        self.grid = grid
+        self.defined_actions = defined_actions
+        self.n = len(grid)
+        assert self.n > 0
+        self.m = len(grid[0])
+        assert self.m > 0
+
+    def actions(self, state):
+        allowed_actions = []
+        for action in self.defined_actions:
+            next_state = vector_add(state, self.defined_actions[action])
+            if 0 <= next_state[0] <= self.n - 1 and 0 <= next_state[1] <= self.m - 1:
+                allowed_actions.append(action)
+
+        return allowed_actions
+    
+    def result(self, state, action):
+        return vector_add(state, self.defined_actions[action])
+    
+    def value(self, state):
+        x, y = state
+        assert 0 <= x < self.n
+        assert 0 <= y < self.m
+        return self.grid[x][y]
 
 # ______________________________________________________________________________
 # グラフ　グラフ問題
