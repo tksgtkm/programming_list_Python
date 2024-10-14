@@ -1,13 +1,62 @@
 import functools
 import heapq
+import operator
+import random
+
+import numpy as np
+
+# ______________________________________________________________________________
+# Functions on Sequences and Iterables
+
+def is_in(elt, seq):
+    return any(x is elt for x in seq)
+
+# ______________________________________________________________________________
+# argmin and argmax
+
+identity = lambda x: x
+
+def argmin_random_tie(seq, key=identity):
+    return min(shuffled(seq), key=key)
+
+def argmax_random_tie(seq, key=identity):
+    return max(shuffled(seq), key=key)
+
+def shuffled(iterable):
+    items = list(iterable)
+    random.shuffle(items)
+    return items
+# ______________________________________________________________________________
+
+# ______________________________________________________________________________
+# Statistical and mathematical functions
+
+def vector_add(a, b):
+    return tuple(map(operator.add, a, b))
+
+def probability(p):
+    return p > random.uniform(0.0, 1.0)
+
+def gaussian_kernel(l=5, sig=1.0):
+    ax = np.arange(-l // 2 + 1., l // 2 + 1.)
+    xx, yy = np.meshgrid(ax, ax)
+    kernel = np.exp(-(xx ** 2 + yy ** 2) / (2. * sig ** 2))
+    return kernel
+
+# ______________________________________________________________________________
+# Grid Functions
 
 def distance(a, b):
     xA, yA = a
     xB, yB = b
     return (xA - xB) ** 2 + (yA - yB) ** 2
 
-def is_in(elt, seq):
-    return any(x is elt for x in seq)
+# ______________________________________________________________________________
+
+
+
+# ______________________________________________________________________________
+# Misc Functions
 
 def memoize(fn, slot=None, maxsize=32):
     if slot:
@@ -24,6 +73,13 @@ def memoize(fn, slot=None, maxsize=32):
             return fn(*args)
     
     return memoized_fn
+
+# ______________________________________________________________________________
+
+# ______________________________________________________________________________
+# Queues: Stack, FIFOQueue, PriorityQueue
+# Stack and FIFOQueue are implemented as list and collection.deque
+# PriorityQueue is implemented here
 
 class PriorityQueue:
 
@@ -67,3 +123,5 @@ class PriorityQueue:
         except ValueError:
             raise KeyError(str(key) + "is not in the priority queue")
         heapq.heapify(self.heap)
+
+# ______________________________________________________________________________

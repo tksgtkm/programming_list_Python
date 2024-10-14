@@ -143,3 +143,11 @@ def display_visual(graph_data, user_input, algorithm=None, problem=None):
         slider = widgets.IntSlider(min=0, max=1, step=1, value=0)
         slider_visual = widgets.interactive(slider_callback, iteration=slider)
         display(slider_visual)
+
+def heatmap(grid, cmap='binary', interpolation='nearest'):
+    fig = plt.figure(figsize=(7, 7))
+    ax = fig.add_subplot(111)
+    ax.set_title('Heatmap')
+    plt.imshow(grid, cmap=cmap, interpolation=interpolation)
+    fig.tight_layout()
+    plt.show()
