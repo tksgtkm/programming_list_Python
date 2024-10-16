@@ -2,6 +2,7 @@ import functools
 import heapq
 import operator
 import random
+import bisect
 
 import numpy as np
 
@@ -36,6 +37,12 @@ def vector_add(a, b):
 
 def probability(p):
     return p > random.uniform(0.0, 1.0)
+
+def weighted_sampler(seq, weights):
+    totals = []
+    for w in weights:
+        totals.append(w + totals[-1] if totals else w)
+    return seq[bisect.bisect(totals, random.uniform(0, totals[-1]))]
 
 def gaussian_kernel(l=5, sig=1.0):
     ax = np.arange(-l // 2 + 1., l // 2 + 1.)
