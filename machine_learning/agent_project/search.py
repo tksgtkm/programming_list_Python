@@ -416,6 +416,43 @@ def simulated_annealing(problem, schedule=exp_schedule()):
         if delta_e > 0 or probability(np.exp(delta_e / T)):
             current = next_choice
 
+def simulated_annealing_full(problem, schedule=exp_schedule()):
+    states = []
+    current = Node(problem.initial)
+    for t in range(sys.maxsize):
+        states.append(current.state)
+        T = schedule(t)
+        if T == 0:
+            return states
+        neighbors = current.expand(problem)
+        if not neighbors:
+            return current.state
+        next_choice = random.choice(neighbors)
+        delta_e = problem.value(next_choice.state) - problem.value(current.state)
+        if delta_e > 0 or probability(np.exp(delta_e / T)):
+            current = next_choice
+
+def and_or_graph_search(problem):
+    def or_search(state, problem, path):
+        if problem.goal_test(state):
+            return []
+        if state in path:
+            return None
+        for action in problem.actions(state):
+            plan = and_search(problem.result(state, action), problem, path + [state, ])
+            if plan is not None:
+                return [action, plan]
+
+    def and_search(states, problem, path):
+        plan = {}
+        for s in states:
+            plan[s] = or_search(s, problem, path)
+            if plan[s] is None:
+                return None
+        return plan
+    
+    return or_search(problem.initial, problem, [])
+
 directions4 = {'W': (-1, 0), 'N': (0, 1), 'E': (1, 0), 'S': (0, -1)}
 directions8 = dict(directions4)
 directions8.update({'NW': (-1, 1), 'NE': (1, 1), 'SE': (1, -1), 'SW': (-1, -1)})
@@ -448,6 +485,70 @@ class PeakFindingProblem(Problem):
         assert 0 <= x < self.n
         assert 0 <= y < self.m
         return self.grid[x][y]
+    
+class OnlineDFSAgent:
+
+    def __init__(self, problem):
+        self.problem = problem
+        self.s = None
+        self.a = None
+        self.untried = dict()
+        self.unbacktracked = dict()
+        self.result = {}
+
+    def __call__(self, percept):
+        s1 = self.update_state(percept)
+        if self.problem.goal_test(s1):
+            self.a = None
+        else:
+            if s1 not in self.untried.keys():
+                self.untried[s1] = self.problem.actions(s1)
+            if self.s is not None:
+                if s1 != self.result[(self.s, self.a)]:
+                    self.result[(self.s, self.a)] = s1
+                    self.unbacktracked[s1].insert(0, self.s)
+            if len(self.untried[s1]) == 0:
+                if len(self.unbacktracked[s1]) == 0:
+                    self.a = None
+                else:
+                    unbacktracked_pop = self.unbacktracked.pop(s1)
+                    for (s, b) in self.result.keys():
+                        if self.result[(s, b)] == unbacktracked_pop:
+                            self.a = b
+                            break
+            else:
+                self.a = self.untried.pop(s1)
+        self.s = s1
+        return self.a
+
+    def update_state(self, percept):
+        return percept
+    
+class OnlineSearchProblem(Problem):
+
+    def __init__(self, initial, goal, graph):
+        super().__init__(initial, goal)
+        self.graph = graph
+
+    def actions(self, state):
+        return self.graph.graph_dict[state].keys()
+    
+    def output(self, state, action):
+        return self.graph.graph_dict[state][action]
+    
+    def h(self, state):
+        return self.graph.least_costs[state]
+    
+    def c(self, s, a, s1):
+        return 1
+    
+    def update_state(self, percept):
+        raise NotImplementedError
+    
+    def goal_test(self, state):
+        if state == self.goal:
+            return True
+        return False
 
 # ______________________________________________________________________________
 # 遺伝的アルゴリズム
@@ -591,3 +692,48 @@ class GraphProblem(Problem):
             return int(distance(locs[node.state], locs[self.goal]))
         else:
             return np.inf
+
+# ______________________________________________________________________________
+
+class NQueensProblem(Problem):
+
+    def __init__(self, N):
+        super().__init__(tuple([-1] * N))
+        self.N = N
+
+    def actions(self, state):
+        if state[-1] != -1:
+            return []
+        else:
+            col = state.index(-1)
+            return [row for row in range(self.N) if not self]
+        
+    def result(self, state, row):
+        col = state.index(-1)
+        new = list(state[:])
+        new[col] = row
+        return tuple(new)
+
+    def conflicted(self, state, row, col):
+        return any(self.conflict(row, col, state[c], c) for c in range(col))
+        
+    def conflict(self, row1, col1, row2, col2):
+        return (
+            row1 == row2 or 
+            col1 == col2 or 
+            row1 - col1 == row2 - col2 or 
+            row1 + col1 == row2 + col2
+        )
+    
+    def goal_test(self, state):
+        if state[-1] == -1:
+            return False
+        return not any(self.conflicted(state, state[col], col) for col in range(len(state)))
+    
+    def h(self, node):
+        num_conflicted = 0
+        for (r1, c1) in enumerate(node.state):
+            for (r2, c2) in enumerate(node.state):
+                if (r1, c1) != (r2, c2):
+                    num_conflicted += self.conflict(r1, c1, r2, c2)
+        return num_conflicted
